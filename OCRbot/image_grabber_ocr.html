@@ -1,0 +1,40 @@
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<title>OCRbot</title>
+
+		<img src="./TEST.png" alt="test" id="test" style="display: none">
+	</head>
+
+	<script src="ocrad.js"></script>
+	
+	<script>
+
+	// Creates a filereader to store the image
+	function loadFile()
+	{
+		var reader = new FileReader();
+		reader.onload = function() 
+		{
+			var img = new Image();
+			img.src = reader.result;
+			img.onload = function()
+			{
+				OCRAD(img);
+			}
+		}
+		reader.readAsDataURL(document.getElementById(theFile).files[0]);
+	}
+
+
+	</script>
+
+
+	<body>
+		<h1>OCRbot 0.1</h1>
+
+		<!-- Input tag to choose the file to read, triggers loadFile() -->
+		<input type="file" onchange="loadFile()" id="theFile">
+	</body>
+</html>

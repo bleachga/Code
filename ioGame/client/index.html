@@ -1,19 +1,238 @@
-<canvas id="ctx" width="500" height="500" style="border:1px solid #000000;"></canvas>
- 
+<!-- index.html -->
+<!-- Sandy Leach -->
+<!-- April 5 2017 -->
+
+<head>
+    <meta charset="utf-8">
+    <title>IO Game</title>
+    <link rel="stylesheet" href="client/index.css">
+</head>
+
+<!-- Sign in state <div> tag -->
+<div id="signDiv">
+    Username: <input id="signDiv-username" type="text"></input><br>
+    Password: <input id="signDiv-password" type="text"></input>
+    <button id="signDiv-signIn">Sign In</button>
+    <button id="signDiv-signUp">Sign Up</button>
+</div>
+
+<!-- Game state <div> tag -->
+<div id="gameDiv" style="display: none;">
+    <canvas id="ctx" width="490" height="490" style="cursor: crosshair;"></canvas>
+
+    <img src="client/img/Sprite2.png" style="display: none"  id="playerSprite"  alt="Sprite 2">
+
+    <img src="client/img/background.jpg" style="display: none" id="background" alt="Background">
+
+    <img src="client/img/zombies/zombie1.svg" style="display: none" id="zombie1" alt="zombie1">
+
+    <div id="chat-text" style="width:500px; height:100px; overflow-y: scroll"></div>
+    <div>Chat!</div>
+
+    <form id="chat-form">
+        <input id="chat-input" type="text" style="width:500px"></input>
+    </form>    
+</div>
+
 <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
+
 <script>
+    // Starts socket
+    var socket = io();
+
+    var DEBUG = false;
+
+    // Sign-In
+    var signDiv = document.getElementById('signDiv');
+    var signDivUsername = document.getElementById('signDiv-username');
+    var signDivSignIn = document.getElementById('signDiv-signIn');
+    var signDivSignUp = document.getElementById('signDiv-signUp');
+    var signDivPassword = document.getElementById('signDiv-password');
+
+    // Sign-In button
+    // onclick() - emits 'signIn' to socket with username and password
+    signDivSignIn.onclick = function()
+    {
+        socket.emit('signIn', 
+        {
+            username: signDivUsername.value, 
+            password: signDivPassword.value
+        });
+    }
+
+    // Sign-Up button
+    // onclick() - emits 'signUp' to socket with username and password 
+    signDivSignUp.onclick = function()
+    {
+        socket.emit('signUp', 
+        {
+            username: signDivUsername.value, 
+            password: signDivPassword.value
+        });
+    }
+
+    // Recieves a 'signInRespomse' from the socket,
+    // if data is good displays the game screen
+    socket.on('signInResponse', function(data)
+    {
+        if (data.success)
+        {
+            signDiv.style.display = 'none';
+            gameDiv.style.display = 'inline-block';
+        } else
+            alert('Sign in unsuccesful... Whoops!');
+    }); 
+
+    // Recieves a 'signUpResponse' from the socket,
+    // Alerts sign up result
+    socket.on('signUpResponse', function(data)
+    {
+        if (data.success)
+        {
+            alert('Sign up successful!');
+        } else
+            alert('Sign up unsuccesful... Whoops!');
+    }); 
+
+    // Game
+
+    // Variables for the chatbox
+    var chatText = document.getElementById('chat-text');
+    var chatInput = document.getElementById('chat-input');
+    var chatForm = document.getElementById('chat-form');
+
+    // Canvas variable
     var ctx = document.getElementById("ctx").getContext("2d");
     ctx.font = '30px Arial';
-   
-    var socket = io();
-       
-    socket.on('newPositions',function(data){
-        ctx.clearRect(0,0,500,500);
-        for(var i = 0 ; i < data.length; i++)
-            ctx.fillText(data[i].number,data[i].x,data[i].y);      
-    });
+    ctx.canvas.width  = window.innerWidth;
+    ctx.canvas.height = window.innerHeight;
+
+
+    // Recieves a 'newPositions' from the socket,
+    // Redraws the canvas with the correct positions for objects
+    socket.on('newPositions',function(data)
+    {
+        var canvasWidth = window.innerWidth;
+        var canvasHeight = window.innerHeight;
+
+        // socket.emit('canvasWidth', {canvasWidth});
+        // socket.emit('canvasHeight', {canvasHeight});
+
+        // Clears the canvas
+        ctx.clearRect(0,0,canvasWidth,canvasHeight);
  
-    document.onkeydown = function(event){
+        // Draws background
+        // ctx.drawImage(document.getElementById("background"), 0, 0);
+        
+        ctx.strokeStyle = '#D6D6D6';
+
+        for (var i = 10; i < canvasWidth; i+=20)
+        {
+            // Creates vertical lines every 10 pixels
+            ctx.beginPath();
+            ctx.moveTo(i,0);
+            ctx.lineTo(i,innerHeight);
+            ctx.stroke();
+
+            for (var j = 10; j < canvasHeight; j+=20)
+            {
+                // Creates horizontal lines every 10 pixels
+                ctx.beginPath();
+                ctx.moveTo(0,j)
+                ctx.lineTo(window.innerWidth,j)
+                ctx.stroke();
+            }
+        }
+
+
+        // Iterates through player array and draws each player
+        var image = false;
+        for(var i = 0 ; i < data.player.length; i++)
+        {  
+            // Draw by image
+            if (image) ctx.drawImage(document.getElementById("playerSprite"), data.player[i].x, data.player[i].y);
+
+            // Draw by shapes
+            else 
+            {
+                var x = data.player[i].x;
+                var y = data.player[i].y;
+
+
+                // Background Circle
+                ctx.beginPath();
+                ctx.moveTo(x,y);
+                ctx.arc(x, y, 16, 0, 2*Math.PI);
+                ctx.fillStyle = 'black';
+                ctx.fill()
+
+                // Main Circle
+                ctx.beginPath();
+                ctx.moveTo(x,y);
+                ctx.arc(x, y, 14, 0, 2*Math.PI);
+                ctx.fillStyle = 'gray';
+                ctx.fill()
+
+            }
+        }
+
+        // Random Color generator
+        function getRandomColor() 
+        {
+            var letters = '0123456789ABCDEF';
+            var color = '#';
+            for (var i = 0; i < 6; i++ ) 
+            {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+
+        // Iterates through bullet array and draws each bullet
+        for(var i = 0 ; i < data.bullet.length; i++)
+        {
+
+            ctx.fillStyle = 'red';
+            ctx.fillRect(data.bullet[i].x-5,data.bullet[i].y-5,7,7);
+        }
+    });
+
+    // Recieves an 'addToChat' from the socket
+    // Adds a <div> containing the chat Data to chatText
+    socket.on('addToChat', function(data)
+    {
+        chatText.innerHTML += '<div>' + data + '</div>';
+    })
+
+    // Receives an 'evalAnswer' from the socket
+    // Alerts console of an Eval Answer
+    socket.on('evalAnswer', function(data)
+    {
+        if (DEBUG) console.log('*DEBUG* Eval Answer');
+        console.log(data);
+    })
+
+    // Submits the chatForm
+    // Checks if the chat starts with a / and emits an 'evalServer' to socket
+    chatForm.onsubmit = function(event)
+    {
+        event.preventDefault();
+
+        if(chatInput.value[0] === '/')
+        {
+            socket.emit('evalServer', chatInput.value.slice(1));
+            if (DEBUG) console.log('*DEBUG* Eval Server');
+        }
+
+        else
+            socket.emit('sendMsgToServer', chatInput.value);
+        
+        chatInput.value = '';
+    }
+
+    // Checks if various keys are pressed and emits a 'keypress' : true to socket
+    document.onkeydown = function(event)
+    {
         if(event.keyCode === 68)    //d
             socket.emit('keyPress',{inputId:'right',state:true});
         else if(event.keyCode === 83)   //s
@@ -22,9 +241,16 @@
             socket.emit('keyPress',{inputId:'left',state:true});
         else if(event.keyCode === 87) // w
             socket.emit('keyPress',{inputId:'up',state:true});
-           
+        else if(event.keyCode === 13) // enter
+            socket.emit('signIn', {
+            username: signDivUsername.value, 
+            password: signDivPassword.value
+        });
     }
-    document.onkeyup = function(event){
+
+    // Checks if various keys are no longer pressed and emits a 'keyPress' : true to socket
+    document.onkeyup = function(event)
+    {
         if(event.keyCode === 68)    //d
             socket.emit('keyPress',{inputId:'right',state:false});
         else if(event.keyCode === 83)   //s
@@ -34,5 +260,27 @@
         else if(event.keyCode === 87) // w
             socket.emit('keyPress',{inputId:'up',state:false});
     }
-   
+
+    // Checks if mouse is clicked and emits a 'keyPress' attack:true to socket
+    document.onmousedown = function(event)
+    {
+        socket.emit('keyPress', {inputId: 'attack', state:true});
+    }
+
+    // Checks if mouse is no longer clicked and emits a 'keyPress' attack:false to socket
+    document.onmouseup = function(event)
+    {
+        socket.emit('keyPress', {inputId: 'attack', state:false});
+    }
+
+    // Checks if mouse moves and emits a 'keypress' mouseAngle:angle to socket
+    // todo FIX ANGLE HERE
+    document.onmousemove = function(event)
+    {
+        var x = -200 + event.clientX - 8;
+        var y = -200 + event.clientY - 8;
+        // FIX
+        var angle = Math.atan2(y,x) / Math.PI * 180;
+        socket.emit('keyPress', {inputId: 'mouseAngle', state: angle});
+    }
 </script>

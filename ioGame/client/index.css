@@ -1,1 +1,16 @@
-body
+#gameDiv {
+	display:none;
+	cursor: crosshair;
+}
+
+#ctx {
+	border-style: none;
+	border-width: 2px;
+	border-color: black;
+	background-color: #FFFFFF;
+}
+
+* {
+	margin: 0;
+	padding: 0;
+}

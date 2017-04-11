@@ -1,0 +1,57 @@
+<html>
+	
+	<head>
+		<title>Canvas</title>
+		<link rel="stylesheet" type="text/css" href="Index.css">
+	</head>
+	
+	<body>
+
+		<h1 style="display: none" align="center">Canvas</h1>
+
+		<canvas id="theCanvas" width="500" height="500" style="border:1px solid">
+		Your browser does not support a canvas
+		</canvas>
+
+		<textarea name="input"></textarea>
+
+		<script>
+			var DEBUG = true;
+
+
+			var canvas = document.getElementById("theCanvas");
+			var can = canvas.getContext("2d");
+
+			// Draw a line
+			if (DEBUG) 
+			{			
+				can.moveTo(0,0);
+				can.lineTo(200, 100);
+				can.stroke();
+			}
+
+			// Draw a circle
+			if (DEBUG)
+			{
+				can.beginPath();
+				// (x, y, r, startangle (radians), endangle (radians))
+				can.arc(200, 200, 40, 0, 2 * Math.PI);
+				can.stroke();
+			}
+
+			// Draw text
+			if (DEBUG)
+			{
+				can.font = "30px Arial";
+				can.fillText("Hello World", 50, 50);
+			}
+
+			// Survival League
+
+		</script>
+
+
+
+	</body>
+
+</html>
